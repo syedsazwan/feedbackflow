@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Management - FeedbackFlow</title>
+    <title>Student Management - FeedbackFlow</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/auth.js"></script>
 </head>
@@ -33,13 +33,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="courses.html" class="nav-link active" id="nav-courses">
+                        <a href="courses.html" class="nav-link" id="nav-courses">
                             <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                             <span>Courses</span>
                         </a>
                     </li>
                     <li>
-                        <a href="students.html" class="nav-link" id="nav-students">
+                        <a href="students.html" class="nav-link active" id="nav-students">
                             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             <span>Students</span>
                         </a>
@@ -85,13 +85,13 @@
             </div>
         </aside>
 
-        <!-- Main Wrapper -->
+        <!-- Main Content Area -->
         <div class="main-wrapper">
             <!-- Top Header -->
             <header class="top-header">
                 <div class="header-left">
-                    <h2>Course Management</h2>
-                    <p>Manage all your course subjects.</p>
+                    <h2>Student Management</h2>
+                    <p>Manage students eligible for course feedback</p>
                 </div>
                 <div class="header-right">
                     <div class="user-profile-badge">
@@ -115,64 +115,53 @@
                     <span id="success-message"></span>
                 </div>
 
-                <!-- Top Toolbar: Search, Dept Filter, Total Count, Add Course Button -->
+                <!-- Top Toolbar: Search & Count Badge -->
                 <div class="toolbar-card">
                     <div class="toolbar-left">
                         <div class="search-input-wrap">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <input type="text" id="course-search-input" class="search-input" placeholder="Search courses or codes..." oninput="filterCoursesTable()">
+                            <input type="text" id="student-search-input" class="search-input" placeholder="Search by register number or student name..." oninput="filterStudentsTable()">
                         </div>
-
-                        <select id="dept-filter-select" class="toolbar-select" onchange="filterCoursesTable()">
-                            <option value="">All Departments</option>
-                        </select>
                     </div>
 
                     <div>
-                        <span class="badge-count" id="course-total-badge">Total: 0 Courses</span>
+                        <span class="badge-count" id="student-total-badge">Total: 0 Students</span>
                     </div>
                 </div>
 
-                <!-- SECTION 1: Add / Edit Course Form -->
+                <!-- SECTION 1: Add / Edit Student Form -->
                 <section class="dashboard-section" id="form-section">
                     <div class="section-header">
                         <div>
-                            <h3 class="section-title" id="form-title">Add New Course</h3>
-                            <p class="section-subtitle">Enter course details to register it for evaluation</p>
+                            <h3 class="section-title" id="form-title">Add Student</h3>
+                            <p class="section-subtitle">Enter student register number and full name</p>
                         </div>
                     </div>
 
                     <div class="content-card" style="padding: 22px 24px; margin-bottom: 28px;">
-                        <form id="course-form" onsubmit="handleCourseSubmit(event)">
-                            <input type="hidden" id="course-id" value="">
+                        <form id="student-form" onsubmit="handleStudentSubmit(event)">
+                            <input type="hidden" id="student-id" value="">
 
-                            <div class="form-grid-3">
+                            <div class="form-grid-3" style="grid-template-columns: 1fr 2fr;">
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="course-code" class="form-label">
-                                        Course Code <span class="required">*</span>
+                                    <label for="register-number" class="form-label">
+                                        Register Number <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="course-code" class="form-input" placeholder="e.g. CS102" required>
+                                    <input type="text" id="register-number" class="form-input" placeholder="e.g. 23AIDS001" required>
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="course-name" class="form-label">
-                                        Course Name <span class="required">*</span>
+                                    <label for="student-name" class="form-label">
+                                        Student Name <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="course-name" class="form-input" placeholder="e.g. Database Management Systems" required>
-                                </div>
-
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="department" class="form-label">
-                                        Department <span class="required">*</span>
-                                    </label>
-                                    <input type="text" id="department" class="form-input" placeholder="e.g. CSE" required>
+                                    <input type="text" id="student-name" class="form-input" placeholder="e.g. Student One" required>
                                 </div>
                             </div>
 
                             <div class="form-actions" style="margin-top: 18px;">
-                                <button type="submit" id="btn-course-submit" class="btn-submit">
+                                <button type="submit" id="btn-student-submit" class="btn-submit">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    <span id="btn-submit-text">Add Course</span>
+                                    <span id="btn-submit-text">Add Student</span>
                                 </button>
                                 <button type="button" id="btn-cancel-edit" class="btn-secondary" style="display: none;" onclick="cancelEdit()">
                                     Cancel Edit
@@ -182,31 +171,30 @@
                     </div>
                 </section>
 
-                <!-- SECTION 2: Registered Courses Table -->
+                <!-- SECTION 2: Registered Students Table -->
                 <section class="dashboard-section">
                     <div class="section-header">
                         <div>
-                            <h3 class="section-title">Registered Courses</h3>
-                            <p class="section-subtitle">Catalog of available course subjects</p>
+                            <h3 class="section-title">Registered Students</h3>
+                            <p class="section-subtitle">Catalog of students eligible to submit evaluations</p>
                         </div>
                     </div>
 
                     <div class="content-card">
                         <div class="table-responsive">
-                            <table class="academic-table" id="courses-management-table">
+                            <table class="academic-table" id="students-management-table">
                                 <thead>
                                     <tr>
                                         <th style="width: 70px;">#</th>
-                                        <th style="width: 140px;">Course Code</th>
-                                        <th>Course Name</th>
-                                        <th style="width: 160px;">Department</th>
+                                        <th style="width: 200px;">Register Number</th>
+                                        <th>Student Name</th>
                                         <th style="width: 180px; text-align: right;">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="courses-table-body">
+                                <tbody id="students-table-body">
                                     <tr>
-                                        <td colspan="5" class="table-empty-state">
-                                            Loading courses...
+                                        <td colspan="4" class="table-empty-state">
+                                            Loading students...
                                         </td>
                                     </tr>
                                 </tbody>
@@ -218,7 +206,7 @@
         </div>
     </div>
 
-    <!-- Course Management JavaScript Logic -->
-    <script src="js/courses.js"></script>
+    <!-- Student JavaScript Logic -->
+    <script src="js/students.js"></script>
 </body>
 </html>

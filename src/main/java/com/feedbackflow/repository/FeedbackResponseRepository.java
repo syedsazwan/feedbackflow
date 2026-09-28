@@ -16,4 +16,7 @@ public interface FeedbackResponseRepository extends JpaRepository<FeedbackRespon
 
     @Query("SELECT AVG(fr.rating) FROM FeedbackResponse fr")
     Double getOverallAverageRating();
+
+    @Query("SELECT AVG(fr.rating) FROM FeedbackResponse fr WHERE fr.feedback.course.id = :courseId")
+    Double getAverageRatingByCourseId(@Param("courseId") Long courseId);
 }

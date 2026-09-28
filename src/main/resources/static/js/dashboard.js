@@ -39,6 +39,14 @@ function fetchDashboardSummary() {
             document.getElementById('stat-total-feedback').textContent = totalFeedback;
             document.getElementById('stat-overall-rating').textContent = `${avgRating} / 5`;
 
+            // Secondary Section: System Information
+            const studentsEl = document.getElementById('stat-total-students');
+            const semestersEl = document.getElementById('stat-total-semesters');
+            const openSemestersEl = document.getElementById('stat-open-semesters');
+            if (studentsEl) studentsEl.textContent = data.totalStudents ?? 0;
+            if (semestersEl) semestersEl.textContent = data.totalSemesters ?? 0;
+            if (openSemestersEl) openSemestersEl.textContent = data.openSemesters ?? 0;
+
             // System Overview Side Panel
             document.getElementById('overview-courses').textContent = `${totalCourses} Registered`;
             document.getElementById('overview-questions').textContent = `${totalQuestions} Active`;
@@ -103,24 +111,24 @@ function fetchCoursePerformance() {
                     const percent = hasRating ? Math.min(100, Math.max(0, (avgScore / 5) * 100)) : 0;
 
                     row.innerHTML = `
-                        <div class="perf-info">
-                            <div class="perf-title-wrap">
-                                <span class="badge-code">${escapeHtml(course.courseCode || 'N/A')}</span>
-                                <span class="perf-course-name">${escapeHtml(course.courseName || 'Untitled Course')}</span>
-                                <span class="badge-dept">${escapeHtml(course.department || 'General')}</span>
-                            </div>
-                            <div class="perf-meter-wrap">
-                                <div class="perf-meter-track">
-                                    <div class="perf-meter-fill" style="width: ${percent}%;"></div>
-                                </div>
-                                <span class="perf-score-text">
-                                    ${hasRating ? `${formattedScore} / 5` : '<span style="color: var(--text-muted); font-size: 11px;">No feedback</span>'}
-                                </span>
-                            </div>
+                        <div class="perf-col-left">
+                            <span class="badge-code">${escapeHtml(course.courseCode || 'N/A')}</span>
+                            <span class="perf-course-name" title="${escapeHtml(course.courseName || '')}">${escapeHtml(course.courseName || 'Untitled Course')}</span>
+                            <span class="badge-dept">${escapeHtml(course.department || 'General')}</span>
                         </div>
-                        <a href="results.html?courseId=${encodeURIComponent(course.id)}" class="btn-action" title="View detailed feedback report">
-                            View Results
-                        </a>
+                        <div class="perf-col-middle">
+                            <div class="perf-meter-track">
+                                <div class="perf-meter-fill" style="width: ${percent}%;"></div>
+                            </div>
+                            <span class="perf-score-text">
+                                ${hasRating ? `${formattedScore} / 5` : '<span class="perf-no-feedback">No feedback</span>'}
+                            </span>
+                        </div>
+                        <div class="perf-col-right">
+                            <a href="results.html?courseId=${encodeURIComponent(course.id)}" class="btn-action" title="View detailed feedback report">
+                                View Results
+                            </a>
+                        </div>
                     `;
                     container.appendChild(row);
                 });

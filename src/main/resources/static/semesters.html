@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Management - FeedbackFlow</title>
+    <title>Semester Management - FeedbackFlow</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/auth.js"></script>
 </head>
@@ -33,7 +33,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="courses.html" class="nav-link active" id="nav-courses">
+                        <a href="courses.html" class="nav-link" id="nav-courses">
                             <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                             <span>Courses</span>
                         </a>
@@ -45,7 +45,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="semesters.html" class="nav-link" id="nav-semesters">
+                        <a href="semesters.html" class="nav-link active" id="nav-semesters">
                             <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             <span>Semesters</span>
                         </a>
@@ -85,13 +85,13 @@
             </div>
         </aside>
 
-        <!-- Main Wrapper -->
+        <!-- Main Content Area -->
         <div class="main-wrapper">
             <!-- Top Header -->
             <header class="top-header">
                 <div class="header-left">
-                    <h2>Course Management</h2>
-                    <p>Manage all your course subjects.</p>
+                    <h2>Semester Management</h2>
+                    <p>Control feedback collection periods</p>
                 </div>
                 <div class="header-right">
                     <div class="user-profile-badge">
@@ -115,64 +115,66 @@
                     <span id="success-message"></span>
                 </div>
 
-                <!-- Top Toolbar: Search, Dept Filter, Total Count, Add Course Button -->
+                <!-- Top Toolbar -->
                 <div class="toolbar-card">
                     <div class="toolbar-left">
                         <div class="search-input-wrap">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <input type="text" id="course-search-input" class="search-input" placeholder="Search courses or codes..." oninput="filterCoursesTable()">
+                            <input type="text" id="semester-search-input" class="search-input" placeholder="Search semesters..." oninput="filterSemestersTable()">
                         </div>
-
-                        <select id="dept-filter-select" class="toolbar-select" onchange="filterCoursesTable()">
-                            <option value="">All Departments</option>
-                        </select>
                     </div>
 
                     <div>
-                        <span class="badge-count" id="course-total-badge">Total: 0 Courses</span>
+                        <span class="badge-count" id="semester-total-badge">Total: 0 Semesters</span>
                     </div>
                 </div>
 
-                <!-- SECTION 1: Add / Edit Course Form -->
+                <!-- SECTION 1: Add / Edit Semester Form -->
                 <section class="dashboard-section" id="form-section">
                     <div class="section-header">
                         <div>
-                            <h3 class="section-title" id="form-title">Add New Course</h3>
-                            <p class="section-subtitle">Enter course details to register it for evaluation</p>
+                            <h3 class="section-title" id="form-title">Add Semester</h3>
+                            <p class="section-subtitle">Define an academic semester and feedback deadline</p>
                         </div>
                     </div>
 
                     <div class="content-card" style="padding: 22px 24px; margin-bottom: 28px;">
-                        <form id="course-form" onsubmit="handleCourseSubmit(event)">
-                            <input type="hidden" id="course-id" value="">
+                        <form id="semester-form" onsubmit="handleSemesterSubmit(event)">
+                            <input type="hidden" id="semester-id" value="">
 
                             <div class="form-grid-3">
+                                <!-- Semester Name -->
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="course-code" class="form-label">
-                                        Course Code <span class="required">*</span>
+                                    <label for="semester-name" class="form-label">
+                                        Semester Name <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="course-code" class="form-input" placeholder="e.g. CS102" required>
+                                    <input type="text" id="semester-name" class="form-input" placeholder="e.g. Semester 5 - 2026" required>
                                 </div>
 
+                                <!-- Feedback Deadline -->
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="course-name" class="form-label">
-                                        Course Name <span class="required">*</span>
+                                    <label for="feedback-deadline" class="form-label">
+                                        Feedback Deadline
                                     </label>
-                                    <input type="text" id="course-name" class="form-input" placeholder="e.g. Database Management Systems" required>
+                                    <input type="date" id="feedback-deadline" class="form-input">
                                 </div>
 
+                                <!-- Feedback Open Select -->
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="department" class="form-label">
-                                        Department <span class="required">*</span>
+                                    <label for="feedback-open" class="form-label">
+                                        Feedback Status <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="department" class="form-input" placeholder="e.g. CSE" required>
+                                    <select id="feedback-open" class="form-select" required>
+                                        <option value="true" selected>Open</option>
+                                        <option value="false">Closed</option>
+                                    </select>
                                 </div>
                             </div>
 
                             <div class="form-actions" style="margin-top: 18px;">
-                                <button type="submit" id="btn-course-submit" class="btn-submit">
+                                <button type="submit" id="btn-semester-submit" class="btn-submit">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    <span id="btn-submit-text">Add Course</span>
+                                    <span id="btn-submit-text">Add Semester</span>
                                 </button>
                                 <button type="button" id="btn-cancel-edit" class="btn-secondary" style="display: none;" onclick="cancelEdit()">
                                     Cancel Edit
@@ -182,31 +184,32 @@
                     </div>
                 </section>
 
-                <!-- SECTION 2: Registered Courses Table -->
+                <!-- SECTION 2: Semester List Table -->
                 <section class="dashboard-section">
                     <div class="section-header">
                         <div>
-                            <h3 class="section-title">Registered Courses</h3>
-                            <p class="section-subtitle">Catalog of available course subjects</p>
+                            <h3 class="section-title">Semester List</h3>
+                            <p class="section-subtitle">Configured terms and real-time submission permissions</p>
                         </div>
                     </div>
 
                     <div class="content-card">
                         <div class="table-responsive">
-                            <table class="academic-table" id="courses-management-table">
+                            <table class="academic-table" id="semesters-management-table">
                                 <thead>
                                     <tr>
                                         <th style="width: 70px;">#</th>
-                                        <th style="width: 140px;">Course Code</th>
-                                        <th>Course Name</th>
-                                        <th style="width: 160px;">Department</th>
-                                        <th style="width: 180px; text-align: right;">Actions</th>
+                                        <th>Semester</th>
+                                        <th style="width: 150px;">Deadline</th>
+                                        <th style="width: 120px;">Status</th>
+                                        <th style="width: 170px;">Submission Allowed</th>
+                                        <th style="width: 250px; text-align: right;">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="courses-table-body">
+                                <tbody id="semesters-table-body">
                                     <tr>
-                                        <td colspan="5" class="table-empty-state">
-                                            Loading courses...
+                                        <td colspan="6" class="table-empty-state">
+                                            Loading semesters...
                                         </td>
                                     </tr>
                                 </tbody>
@@ -218,7 +221,7 @@
         </div>
     </div>
 
-    <!-- Course Management JavaScript Logic -->
-    <script src="js/courses.js"></script>
+    <!-- Semester JavaScript Logic -->
+    <script src="js/semesters.js"></script>
 </body>
 </html>

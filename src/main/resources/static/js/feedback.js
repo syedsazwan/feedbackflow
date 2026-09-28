@@ -1,6 +1,8 @@
 // FeedbackFlow - Submit Feedback JavaScript
-// Handles course selection details, dynamic question rendering, real-time progress, and submission
+// Handles Student, Semester, and Course selection, dynamic question rendering, real-time progress, and submission
 
+let studentsData = [];
+let semestersData = [];
 let coursesData = [];
 let questionsData = [];
 
@@ -9,12 +11,114 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Initialize page by fetching courses and evaluation questions
+ * Initialize page by fetching students, semesters, courses and evaluation questions
  */
 function initFeedbackForm() {
     hideMessages();
+    loadStudents();
+    loadSemesters();
     loadCourses();
     loadQuestions();
+}
+
+/**
+ * Load students from /api/students
+ */
+function loadStudents() {
+    const studentSelect = document.getElementById('student-select');
+    if (!studentSelect) return;
+
+    fetch('/api/students')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load students (HTTP ' + response.status + ')');
+            }
+            return response.json();
+        })
+        .then(students => {
+            studentsData = students || [];
+            studentSelect.innerHTML = '<option value="" disabled selected>-- Select Student --</option>';
+
+            if (studentsData.length === 0) {
+                studentSelect.innerHTML = '<option value="" disabled>No students registered yet</option>';
+                return;
+            }
+
+            studentsData.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = `${student.registerNumber} - ${student.studentName}`;
+                studentSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching students:', error);
+            studentSelect.innerHTML = '<option value="" disabled>Error loading students</option>';
+            showError('Unable to load students from the backend.');
+        });
+}
+
+/**
+ * Load semesters from /api/semesters
+ */
+function loadSemesters() {
+    const semesterSelect = document.getElementById('semester-select');
+    if (!semesterSelect) return;
+
+    fetch('/api/semesters')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load semesters (HTTP ' + response.status + ')');
+            }
+            return response.json();
+        })
+        .then(semesters => {
+            semestersData = semesters || [];
+            semesterSelect.innerHTML = '<option value="" disabled selected>-- Select Semester --</option>';
+
+            if (semestersData.length === 0) {
+                semesterSelect.innerHTML = '<option value="" disabled>No semesters registered yet</option>';
+                return;
+            }
+
+            const now = new Date();
+
+            semestersData.forEach(semester => {
+                const option = document.createElement('option');
+                option.value = semester.id;
+
+                let isDeadlinePassed = false;
+                if (semester.feedbackDeadline) {
+                    const deadlineDate = new Date(semester.feedbackDeadline + 'T23:59:59');
+                    if (deadlineDate < now) {
+                        isDeadlinePassed = true;
+                    }
+                }
+
+                let statusSuffix = '';
+                let isDisabled = false;
+
+                if (!semester.feedbackOpen) {
+                    statusSuffix = ' (Closed)';
+                    isDisabled = true;
+                } else if (isDeadlinePassed) {
+                    statusSuffix = ' (Deadline Passed)';
+                    isDisabled = true;
+                }
+
+                option.textContent = `${semester.semesterName}${statusSuffix}`;
+                if (isDisabled) {
+                    option.disabled = true;
+                }
+
+                semesterSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching semesters:', error);
+            semesterSelect.innerHTML = '<option value="" disabled>Error loading semesters</option>';
+            showError('Unable to load semesters from the backend.');
+        });
 }
 
 /**
@@ -22,6 +126,8 @@ function initFeedbackForm() {
  */
 function loadCourses() {
     const courseSelect = document.getElementById('course-select');
+    if (!courseSelect) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const preselectedCourseId = urlParams.get('courseId');
 
@@ -34,7 +140,7 @@ function loadCourses() {
         })
         .then(courses => {
             coursesData = courses || [];
-            courseSelect.innerHTML = '<option value="" disabled selected>-- Select a Course --</option>';
+            courseSelect.innerHTML = '<option value="" disabled selected>-- Select Course --</option>';
 
             if (coursesData.length === 0) {
                 courseSelect.innerHTML = '<option value="" disabled>No courses registered yet</option>';
@@ -45,7 +151,7 @@ function loadCourses() {
             coursesData.forEach(course => {
                 const option = document.createElement('option');
                 option.value = course.id;
-                option.textContent = `${course.courseCode} - ${course.courseName} (${course.department})`;
+                option.textContent = `${course.courseCode} - ${course.courseName}`;
 
                 if (preselectedCourseId && String(course.id) === String(preselectedCourseId)) {
                     option.selected = true;
@@ -54,7 +160,6 @@ function loadCourses() {
                 courseSelect.appendChild(option);
             });
 
-            // Update course details card if preselected
             if (preselectedCourseId) {
                 onCourseSelected();
             }
@@ -67,18 +172,22 @@ function loadCourses() {
 }
 
 /**
- * Update course preview card when selected
+ * Update course preview card when selected (if element exists)
  */
 function onCourseSelected() {
     const courseSelect = document.getElementById('course-select');
+    if (!courseSelect) return;
     const courseId = courseSelect.value;
     const card = document.getElementById('course-info-card');
 
     const course = coursesData.find(c => String(c.id) === String(courseId));
     if (course && card) {
-        document.getElementById('info-course-code').textContent = course.courseCode || '';
-        document.getElementById('info-course-name').textContent = course.courseName || '';
-        document.getElementById('info-course-dept').textContent = course.department || '';
+        const codeEl = document.getElementById('info-course-code');
+        const nameEl = document.getElementById('info-course-name');
+        const deptEl = document.getElementById('info-course-dept');
+        if (codeEl) codeEl.textContent = course.courseCode || '';
+        if (nameEl) nameEl.textContent = course.courseName || '';
+        if (deptEl) deptEl.textContent = course.department || '';
         card.style.display = 'block';
     } else if (card) {
         card.style.display = 'none';
@@ -90,6 +199,7 @@ function onCourseSelected() {
  */
 function loadQuestions() {
     const container = document.getElementById('questions-container');
+    if (!container) return;
 
     fetch('/api/questions')
         .then(response => {
@@ -167,6 +277,7 @@ function loadQuestions() {
 
 /**
  * Calculate and update real-time questions answered progress bar
+ * Depends ONLY on answered feedback questions
  */
 function updateProgressBar() {
     const total = questionsData.length;
@@ -195,12 +306,27 @@ function handleFeedbackSubmit(event) {
     event.preventDefault();
     hideMessages();
 
-    const courseSelect = document.getElementById('course-select');
-    const courseId = courseSelect.value;
+    const studentSelect = document.getElementById('student-select');
+    const studentId = studentSelect ? studentSelect.value : '';
+    if (!studentId) {
+        showError('Please select a student.');
+        if (studentSelect) studentSelect.focus();
+        return;
+    }
 
+    const semesterSelect = document.getElementById('semester-select');
+    const semesterId = semesterSelect ? semesterSelect.value : '';
+    if (!semesterId) {
+        showError('Please select a semester.');
+        if (semesterSelect) semesterSelect.focus();
+        return;
+    }
+
+    const courseSelect = document.getElementById('course-select');
+    const courseId = courseSelect ? courseSelect.value : '';
     if (!courseId) {
-        showError('Please select a course to submit feedback.');
-        courseSelect.focus();
+        showError('Please select a course.');
+        if (courseSelect) courseSelect.focus();
         return;
     }
 
@@ -225,12 +351,14 @@ function handleFeedbackSubmit(event) {
     }
 
     const payload = {
+        studentId: Number(studentId),
         courseId: Number(courseId),
+        semesterId: Number(semesterId),
         ratings: ratings
     };
 
     const submitBtn = document.getElementById('btn-submit');
-    submitBtn.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
 
     fetch('/api/feedback', {
         method: 'POST',
@@ -239,22 +367,33 @@ function handleFeedbackSubmit(event) {
         },
         body: JSON.stringify(payload)
     })
-        .then(response => {
+        .then(async response => {
             if (!response.ok) {
-                throw new Error('Server returned error (HTTP ' + response.status + ')');
+                let errorMsg = 'Failed to submit feedback.';
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.message) {
+                        errorMsg = errorData.message;
+                    } else if (errorData && errorData.error) {
+                        errorMsg = errorData.error;
+                    }
+                } catch (jsonErr) {
+                    errorMsg = response.statusText || errorMsg;
+                }
+                throw new Error(errorMsg);
             }
             return response.json();
         })
         .then(savedFeedback => {
-            showSuccess('Feedback submitted successfully. Thank you for evaluating this course.');
+            showSuccess('Feedback submitted successfully.');
             resetForm();
         })
         .catch(error => {
             console.error('Submission error:', error);
-            showError('Failed to submit feedback. Please check your connection and try again.');
+            showError(error.message || 'Failed to submit feedback. Please check your connection and try again.');
         })
         .finally(() => {
-            submitBtn.disabled = false;
+            if (submitBtn) submitBtn.disabled = false;
         });
 }
 
@@ -262,14 +401,24 @@ function handleFeedbackSubmit(event) {
  * Reset form fields and progress bar
  */
 function resetForm() {
-    const form = document.getElementById('feedback-form');
-    if (form) {
-        form.reset();
-    }
+    const studentSelect = document.getElementById('student-select');
+    const semesterSelect = document.getElementById('semester-select');
+    const courseSelect = document.getElementById('course-select');
+
+    if (studentSelect) studentSelect.value = '';
+    if (semesterSelect) semesterSelect.value = '';
+    if (courseSelect) courseSelect.value = '';
+
+    const checkedInputs = document.querySelectorAll('input[type="radio"]:checked');
+    checkedInputs.forEach(input => {
+        input.checked = false;
+    });
+
     const card = document.getElementById('course-info-card');
     if (card) {
         card.style.display = 'none';
     }
+
     updateProgressBar();
 }
 
