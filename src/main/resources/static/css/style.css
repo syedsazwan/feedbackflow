@@ -1132,44 +1132,37 @@ body {
 }
 
 /* ========================================================
-   Submit Feedback Page: Two-Column Layout
+   Submit Feedback Page: Top Horizontal Layout
    ======================================================== */
-.feedback-two-column-layout {
-    display: grid;
-    grid-template-columns: 290px 1fr;
-    gap: 24px;
-    align-items: start;
+.feedback-top-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    box-shadow: var(--shadow-sm);
 }
 
-.sticky-course-panel {
-    position: sticky;
-    top: 94px;
-    width: 100%;
+.feedback-top-left {
+    flex: 1;
+    max-width: 480px;
 }
 
-.sticky-course-panel .form-select {
+.feedback-top-left .form-select {
     height: 44px;
     font-size: 13.5px;
 }
 
-.selected-course-details-box {
-    margin-top: 18px;
-    padding: 16px 18px;
-    background-color: #f8fafc;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-}
-
-.progress-header-card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 16px 22px;
-    margin-bottom: 20px;
+.feedback-top-right {
+    flex: 1;
+    max-width: 440px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    box-shadow: var(--shadow-xs);
 }
 
 .progress-header-info {
@@ -1330,8 +1323,8 @@ body {
 }
 
 /* Submit Action Bar Buttons */
-.feedback-two-column-layout .btn-submit,
-.feedback-two-column-layout .btn-secondary {
+#feedback-form .btn-submit,
+#feedback-form .btn-secondary {
     height: 44px;
     font-size: 14px;
 }
@@ -1590,12 +1583,6 @@ body {
     .quick-actions-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    .feedback-two-column-layout {
-        grid-template-columns: 1fr;
-    }
-    .sticky-course-panel {
-        position: static;
-    }
 }
 
 @media (max-width: 900px) {
@@ -1607,6 +1594,15 @@ body {
     }
     .results-top-grid {
         grid-template-columns: 1fr;
+    }
+    .feedback-top-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 18px;
+    }
+    .feedback-top-left,
+    .feedback-top-right {
+        max-width: 100%;
     }
 }
 
