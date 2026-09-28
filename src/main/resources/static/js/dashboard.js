@@ -1,21 +1,21 @@
 // FeedbackFlow - Dashboard JavaScript
-// Handles fetching and displaying summary metrics and course list
+// Fetches real dashboard statistics, course performance metrics, and portal overview
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDashboard();
 });
 
 /**
- * Main function to load all dashboard components
+ * Main dashboard data loader
  */
 function loadDashboard() {
     hideError();
     fetchDashboardSummary();
-    fetchCourses();
+    fetchCoursePerformance();
 }
 
 /**
- * Fetch dashboard summary statistics from /api/dashboard/summary
+ * Fetch summary statistics from /api/dashboard/summary
  */
 function fetchDashboardSummary() {
     fetch('/api/dashboard/summary')
@@ -26,15 +26,24 @@ function fetchDashboardSummary() {
             return response.json();
         })
         .then(data => {
-            // Update the 4 metric cards
-            document.getElementById('stat-total-courses').textContent = data.totalCourses ?? 0;
-            document.getElementById('stat-total-questions').textContent = data.totalQuestions ?? 0;
-            document.getElementById('stat-total-feedback').textContent = data.totalFeedback ?? 0;
-
-            const rating = (data.overallAverageRating !== undefined && data.overallAverageRating !== null)
+            const totalCourses = data.totalCourses ?? 0;
+            const totalQuestions = data.totalQuestions ?? 0;
+            const totalFeedback = data.totalFeedback ?? 0;
+            const avgRating = (data.overallAverageRating !== undefined && data.overallAverageRating !== null)
                 ? Number(data.overallAverageRating).toFixed(1)
                 : '0.0';
-            document.getElementById('stat-overall-rating').textContent = `${rating} / 5`;
+
+            // 4 Top Metric Cards
+            document.getElementById('stat-total-courses').textContent = totalCourses;
+            document.getElementById('stat-total-questions').textContent = totalQuestions;
+            document.getElementById('stat-total-feedback').textContent = totalFeedback;
+            document.getElementById('stat-overall-rating').textContent = `${avgRating} / 5`;
+
+            // System Overview Side Panel
+            document.getElementById('overview-courses').textContent = `${totalCourses} Registered`;
+            document.getElementById('overview-questions').textContent = `${totalQuestions} Active`;
+            document.getElementById('overview-feedback').textContent = `${totalFeedback} Submissions`;
+            document.getElementById('overview-rating').textContent = `${avgRating} / 5`;
         })
         .catch(error => {
             console.error('Error fetching dashboard summary:', error);
@@ -43,10 +52,10 @@ function fetchDashboardSummary() {
 }
 
 /**
- * Fetch registered courses from /api/courses and populate the overview table
+ * Fetch courses and their individual feedback averages to build Course Performance rows
  */
-function fetchCourses() {
-    const tableBody = document.getElementById('courses-table-body');
+function fetchCoursePerformance() {
+    const container = document.getElementById('course-perf-container');
 
     fetch('/api/courses')
         .then(response => {
@@ -56,56 +65,79 @@ function fetchCourses() {
             return response.json();
         })
         .then(courses => {
-            tableBody.innerHTML = '';
-
             if (!courses || courses.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="table-empty-state">
-                            <strong>No courses found</strong>
-                            <p>Courses added to the system will appear here.</p>
-                        </td>
-                    </tr>
+                container.innerHTML = `
+                    <div class="table-empty-state">
+                        <strong>No courses found</strong>
+                        <p style="margin-top: 4px;">Register courses to view performance data.</p>
+                    </div>
                 `;
                 return;
             }
 
-            // Render each course row
-            courses.forEach(course => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <span class="badge-code">${escapeHtml(course.courseCode || 'N/A')}</span>
-                    </td>
-                    <td>
-                        <strong>${escapeHtml(course.courseName || 'Untitled Course')}</strong>
-                    </td>
-                    <td>
-                        <span class="badge-dept">${escapeHtml(course.department || 'General')}</span>
-                    </td>
-                    <td style="text-align: right;">
-                        <a href="results.html?courseId=${encodeURIComponent(course.id)}" class="btn-action">
-                            View Feedback
+            container.innerHTML = '';
+
+            // For each course, fetch its question averages asynchronously
+            const coursePromises = courses.map(course => {
+                return fetch(`/api/feedback/course/${encodeURIComponent(course.id)}/averages`)
+                    .then(res => res.ok ? res.json() : [])
+                    .then(averages => {
+                        let avgScore = null;
+                        if (averages && averages.length > 0) {
+                            const sum = averages.reduce((acc, curr) => acc + Number(curr.averageRating || 0), 0);
+                            avgScore = sum / averages.length;
+                        }
+                        return { course, avgScore };
+                    })
+                    .catch(() => ({ course, avgScore: null }));
+            });
+
+            Promise.all(coursePromises).then(results => {
+                container.innerHTML = '';
+                results.forEach(({ course, avgScore }) => {
+                    const row = document.createElement('div');
+                    row.className = 'course-perf-row';
+
+                    const hasRating = avgScore !== null && !isNaN(avgScore);
+                    const formattedScore = hasRating ? (Math.round(avgScore * 10) / 10).toFixed(1) : null;
+                    const percent = hasRating ? Math.min(100, Math.max(0, (avgScore / 5) * 100)) : 0;
+
+                    row.innerHTML = `
+                        <div class="perf-info">
+                            <div class="perf-title-wrap">
+                                <span class="badge-code">${escapeHtml(course.courseCode || 'N/A')}</span>
+                                <span class="perf-course-name">${escapeHtml(course.courseName || 'Untitled Course')}</span>
+                                <span class="badge-dept">${escapeHtml(course.department || 'General')}</span>
+                            </div>
+                            <div class="perf-meter-wrap">
+                                <div class="perf-meter-track">
+                                    <div class="perf-meter-fill" style="width: ${percent}%;"></div>
+                                </div>
+                                <span class="perf-score-text">
+                                    ${hasRating ? `${formattedScore} / 5` : '<span style="color: var(--text-muted); font-size: 11px;">No feedback</span>'}
+                                </span>
+                            </div>
+                        </div>
+                        <a href="results.html?courseId=${encodeURIComponent(course.id)}" class="btn-action" title="View detailed feedback report">
+                            View Results
                         </a>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
+                    `;
+                    container.appendChild(row);
+                });
             });
         })
         .catch(error => {
-            console.error('Error fetching courses:', error);
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="table-empty-state" style="color: #ef4444;">
-                        Failed to load course list.
-                    </td>
-                </tr>
+            console.error('Error fetching course performance:', error);
+            container.innerHTML = `
+                <div class="table-empty-state" style="color: var(--danger);">
+                    Failed to load course performance.
+                </div>
             `;
         });
 }
 
 /**
- * Helper to show an error message banner
+ * Show error banner
  */
 function showError(message) {
     const banner = document.getElementById('error-banner');
@@ -117,7 +149,7 @@ function showError(message) {
 }
 
 /**
- * Helper to hide the error message banner
+ * Hide error banner
  */
 function hideError() {
     const banner = document.getElementById('error-banner');

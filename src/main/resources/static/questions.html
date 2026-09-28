@@ -13,16 +13,18 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <div class="logo-icon">FF</div>
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
                     <div class="brand-text">
                         <h1>FeedbackFlow</h1>
-                        <p>Academic System</p>
+                        <p>Course Feedback Collection System</p>
                     </div>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Navigation</div>
+                <div class="nav-section-title">Menu</div>
                 <ul class="nav-menu">
                     <li>
                         <a href="index.html" class="nav-link" id="nav-dashboard">
@@ -74,16 +76,19 @@
                     <p>Configure course evaluation questions</p>
                 </div>
                 <div class="header-right">
-                    <div class="system-badge">
-                        <span class="pulse-dot"></span>
-                        Academic Feedback System
+                    <div class="user-profile-badge">
+                        <div class="header-user-avatar">A</div>
+                        <div class="user-details">
+                            <span class="header-user-name">Admin</span>
+                            <span class="user-role-label">Administrator</span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Page Body -->
             <main class="dashboard-content">
-                <!-- Status Notifications -->
+                <!-- Notifications -->
                 <div id="error-banner" class="alert-banner">
                     <span id="error-message"></span>
                 </div>
@@ -92,16 +97,34 @@
                     <span id="success-message"></span>
                 </div>
 
+                <!-- Top Toolbar: Search, Total Count, Add Question Button -->
+                <div class="toolbar-card">
+                    <div class="toolbar-left">
+                        <div class="search-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="question-search-input" class="search-input" placeholder="Search evaluation questions..." oninput="filterQuestionsTable()">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="badge-count" id="question-total-badge">Total: 0 Questions</span>
+                        <button class="btn-primary-sm" onclick="scrollToForm()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>Add Question</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- SECTION 1: Add / Edit Question Form -->
                 <section class="dashboard-section" id="form-section">
                     <div class="section-header">
                         <div>
                             <h3 class="section-title" id="form-title">Add Feedback Question</h3>
-                            <p class="section-subtitle">Define question items used across student feedback surveys</p>
+                            <p class="section-subtitle">Define survey questions used for student feedback</p>
                         </div>
                     </div>
 
-                    <div class="content-card" style="padding: 24px; margin-bottom: 32px;">
+                    <div class="content-card" style="padding: 22px 24px; margin-bottom: 28px;">
                         <form id="question-form" onsubmit="handleQuestionSubmit(event)">
                             <input type="hidden" id="question-id" value="">
 
@@ -112,9 +135,9 @@
                                 <textarea id="question-text" class="form-textarea" placeholder="e.g. Was the course material easy to understand?" required rows="3"></textarea>
                             </div>
 
-                            <div class="form-actions" style="margin-top: 20px;">
+                            <div class="form-actions" style="margin-top: 18px;">
                                 <button type="submit" id="btn-question-submit" class="btn-submit">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     <span id="btn-submit-text">Add Question</span>
                                 </button>
                                 <button type="button" id="btn-cancel-edit" class="btn-secondary" style="display: none;" onclick="cancelEdit()">
@@ -130,7 +153,7 @@
                     <div class="section-header">
                         <div>
                             <h3 class="section-title">Evaluation Questions</h3>
-                            <p class="section-subtitle">Active evaluation criteria evaluated by students</p>
+                            <p class="section-subtitle">Active evaluation criteria</p>
                         </div>
                     </div>
 
@@ -139,9 +162,9 @@
                             <table class="academic-table" id="questions-management-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 80px;">ID</th>
+                                        <th style="width: 70px;">#</th>
                                         <th>Question</th>
-                                        <th style="width: 170px; text-align: right;">Actions</th>
+                                        <th style="width: 180px; text-align: right;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="questions-table-body">

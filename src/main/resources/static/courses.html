@@ -13,16 +13,18 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <div class="logo-icon">FF</div>
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
                     <div class="brand-text">
                         <h1>FeedbackFlow</h1>
-                        <p>Academic System</p>
+                        <p>Course Feedback Collection System</p>
                     </div>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Navigation</div>
+                <div class="nav-section-title">Menu</div>
                 <ul class="nav-menu">
                     <li>
                         <a href="index.html" class="nav-link" id="nav-dashboard">
@@ -71,19 +73,22 @@
             <header class="top-header">
                 <div class="header-left">
                     <h2>Course Management</h2>
-                    <p>Add, update and manage feedback courses</p>
+                    <p>Manage all your course subjects.</p>
                 </div>
                 <div class="header-right">
-                    <div class="system-badge">
-                        <span class="pulse-dot"></span>
-                        Academic Feedback System
+                    <div class="user-profile-badge">
+                        <div class="header-user-avatar">A</div>
+                        <div class="user-details">
+                            <span class="header-user-name">Admin</span>
+                            <span class="user-role-label">Administrator</span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Page Body -->
             <main class="dashboard-content">
-                <!-- Status Notifications -->
+                <!-- Notifications -->
                 <div id="error-banner" class="alert-banner">
                     <span id="error-message"></span>
                 </div>
@@ -92,16 +97,38 @@
                     <span id="success-message"></span>
                 </div>
 
+                <!-- Top Toolbar: Search, Dept Filter, Total Count, Add Course Button -->
+                <div class="toolbar-card">
+                    <div class="toolbar-left">
+                        <div class="search-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="course-search-input" class="search-input" placeholder="Search courses or codes..." oninput="filterCoursesTable()">
+                        </div>
+
+                        <select id="dept-filter-select" class="toolbar-select" onchange="filterCoursesTable()">
+                            <option value="">All Departments</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="badge-count" id="course-total-badge">Total: 0 Courses</span>
+                        <button class="btn-primary-sm" onclick="scrollToForm()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>Add Course</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- SECTION 1: Add / Edit Course Form -->
                 <section class="dashboard-section" id="form-section">
                     <div class="section-header">
                         <div>
                             <h3 class="section-title" id="form-title">Add New Course</h3>
-                            <p class="section-subtitle">Enter course information to register it for student evaluation</p>
+                            <p class="section-subtitle">Enter course details to register it for evaluation</p>
                         </div>
                     </div>
 
-                    <div class="content-card" style="padding: 24px; margin-bottom: 32px;">
+                    <div class="content-card" style="padding: 22px 24px; margin-bottom: 28px;">
                         <form id="course-form" onsubmit="handleCourseSubmit(event)">
                             <input type="hidden" id="course-id" value="">
 
@@ -128,9 +155,9 @@
                                 </div>
                             </div>
 
-                            <div class="form-actions" style="margin-top: 20px;">
+                            <div class="form-actions" style="margin-top: 18px;">
                                 <button type="submit" id="btn-course-submit" class="btn-submit">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     <span id="btn-submit-text">Add Course</span>
                                 </button>
                                 <button type="button" id="btn-cancel-edit" class="btn-secondary" style="display: none;" onclick="cancelEdit()">
@@ -146,7 +173,7 @@
                     <div class="section-header">
                         <div>
                             <h3 class="section-title">Registered Courses</h3>
-                            <p class="section-subtitle">Comprehensive directory of existing academic courses</p>
+                            <p class="section-subtitle">Catalog of available course subjects</p>
                         </div>
                     </div>
 
@@ -155,11 +182,11 @@
                             <table class="academic-table" id="courses-management-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 80px;">ID</th>
-                                        <th style="width: 150px;">Course Code</th>
+                                        <th style="width: 70px;">#</th>
+                                        <th style="width: 140px;">Course Code</th>
                                         <th>Course Name</th>
-                                        <th style="width: 180px;">Department</th>
-                                        <th style="width: 170px; text-align: right;">Actions</th>
+                                        <th style="width: 160px;">Department</th>
+                                        <th style="width: 180px; text-align: right;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="courses-table-body">

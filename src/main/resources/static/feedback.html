@@ -13,16 +13,18 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <div class="logo-icon">FF</div>
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
                     <div class="brand-text">
                         <h1>FeedbackFlow</h1>
-                        <p>Academic System</p>
+                        <p>Course Feedback Collection System</p>
                     </div>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Navigation</div>
+                <div class="nav-section-title">Menu</div>
                 <ul class="nav-menu">
                     <li>
                         <a href="index.html" class="nav-link" id="nav-dashboard">
@@ -71,70 +73,99 @@
             <header class="top-header">
                 <div class="header-left">
                     <h2>Submit Feedback</h2>
-                    <p>Student Evaluation Form</p>
+                    <p>Student Course Evaluation Form</p>
                 </div>
                 <div class="header-right">
-                    <div class="system-badge">
-                        <span class="pulse-dot"></span>
-                        Academic Feedback System
+                    <div class="user-profile-badge">
+                        <div class="header-user-avatar">A</div>
+                        <div class="user-details">
+                            <span class="header-user-name">Admin</span>
+                            <span class="user-role-label">Administrator</span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Page Body -->
             <main class="dashboard-content">
-                <!-- Status Messages -->
+                <!-- Notifications -->
                 <div id="error-banner" class="alert-banner">
                     <span id="error-message"></span>
                 </div>
 
                 <div id="success-banner" class="alert-banner success" style="display: none;">
-                    <span id="success-message">Feedback submitted successfully! Thank you for your evaluation.</span>
+                    <span id="success-message">Feedback submitted successfully. Thank you for evaluating this course.</span>
                 </div>
 
-                <div class="form-container">
-                    <form id="feedback-form" onsubmit="handleFeedbackSubmit(event)">
-                        <!-- Course Selection Card -->
-                        <div class="content-card" style="padding: 24px; margin-bottom: 24px;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="course-select" class="form-label">
-                                    Select Course <span class="required">*</span>
-                                </label>
-                                <select id="course-select" class="form-select" required>
-                                    <option value="" disabled selected>Loading available courses...</option>
-                                </select>
+                <!-- Two-Column Layout -->
+                <form id="feedback-form" onsubmit="handleFeedbackSubmit(event)">
+                    <div class="feedback-two-column-layout">
+                        <!-- LEFT COLUMN: Course Selection & Details -->
+                        <div class="sticky-course-panel">
+                            <div class="content-card" style="padding: 22px; margin-bottom: 20px;">
+                                <div class="section-header" style="margin-bottom: 12px;">
+                                    <h3 class="section-title" style="font-size: 15px;">Target Course</h3>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 16px;">
+                                    <label for="course-select" class="form-label">
+                                        Select Course <span class="required">*</span>
+                                    </label>
+                                    <select id="course-select" class="form-select" onchange="onCourseSelected()" required>
+                                        <option value="" disabled selected>Loading courses...</option>
+                                    </select>
+                                </div>
+
+                                <div id="course-info-card" class="selected-course-details-box" style="display: none;">
+                                    <span class="badge-code" id="info-course-code" style="margin-bottom: 8px;">--</span>
+                                    <h4 id="info-course-name" style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Course Title</h4>
+                                    <div style="font-size: 12.5px; color: var(--text-secondary);">
+                                        Department: <strong id="info-course-dept">--</strong>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                                    <strong style="color: var(--text-secondary);">Instructions:</strong>
+                                    <p style="margin-top: 4px;">Provide an honest rating for each criteria. Ratings are collected anonymously to improve course instruction.</p>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Questions Section -->
-                        <div class="section-header">
-                            <div>
-                                <h3 class="section-title">Course Evaluation Questions</h3>
-                                <p class="section-subtitle">Please rate each aspect from 1 (Poor) to 5 (Excellent)</p>
+                        <!-- RIGHT COLUMN: Evaluation Questions & Progress -->
+                        <div>
+                            <!-- Progress Header Card -->
+                            <div class="progress-header-card">
+                                <div class="progress-header-info">
+                                    <span>Questions answered: <strong id="progress-text">0 / 0</strong></span>
+                                    <span id="progress-pct" style="color: var(--primary);">0%</span>
+                                </div>
+                                <div class="progress-header-track">
+                                    <div class="progress-header-fill" id="progress-bar-fill"></div>
+                                </div>
+                            </div>
+
+                            <!-- Questions List Container -->
+                            <div id="questions-container" class="questions-list">
+                                <div class="content-card" style="padding: 32px; text-align: center; color: var(--text-secondary);">
+                                    Loading evaluation questions...
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="content-card" style="padding: 18px 24px;">
+                                <div class="form-actions" style="margin-top: 0; justify-content: space-between;">
+                                    <button type="submit" id="btn-submit" class="btn-submit">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span>Submit Feedback</span>
+                                    </button>
+                                    <button type="button" class="btn-secondary" onclick="resetForm()">
+                                        Reset Form
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-                        <div id="questions-container" class="questions-list">
-                            <div class="content-card" style="padding: 32px; text-align: center; color: var(--text-secondary);">
-                                Loading questions...
-                            </div>
-                        </div>
-
-                        <!-- Form Actions -->
-                        <div class="form-actions">
-                            <button type="submit" id="btn-submit" class="btn-submit">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Submit Feedback</span>
-                            </button>
-                            <button type="button" id="btn-reset" class="btn-secondary" onclick="resetForm()">
-                                Reset
-                            </button>
-                            <a href="index.html" class="btn-secondary">
-                                Back to Dashboard
-                            </a>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </main>
         </div>
     </div>

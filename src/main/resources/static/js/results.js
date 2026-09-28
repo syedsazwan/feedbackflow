@@ -1,5 +1,5 @@
 // FeedbackFlow - Feedback Results JavaScript
-// Handles loading course list, fetching question-wise averages, and computing overall ratings
+// Fetches real question averages, computes overall rating, and maps score status badges
 
 let allCourses = [];
 
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Initialize page: fetch courses and check if a course is pre-selected via URL
+ * Initialize page: load courses and check URL parameters
  */
 function initResultsPage() {
     hideError();
@@ -16,7 +16,7 @@ function initResultsPage() {
 }
 
 /**
- * Fetch courses from /api/courses and populate the selector
+ * Fetch courses from /api/courses
  */
 function loadCoursesDropdown() {
     const courseSelect = document.getElementById('course-select');
@@ -32,7 +32,7 @@ function loadCoursesDropdown() {
         })
         .then(courses => {
             allCourses = courses || [];
-            courseSelect.innerHTML = '<option value="" disabled selected>-- Select a Course --</option>';
+            courseSelect.innerHTML = '<option value="" disabled selected>-- Select Course --</option>';
 
             if (allCourses.length === 0) {
                 courseSelect.innerHTML = '<option value="" disabled>No courses registered yet</option>';
@@ -52,7 +52,6 @@ function loadCoursesDropdown() {
                 courseSelect.appendChild(option);
             });
 
-            // If preselected from URL, automatically fetch its feedback results
             if (preselectedCourseId && allCourses.some(c => String(c.id) === String(preselectedCourseId))) {
                 onCourseSelected();
             }
@@ -65,41 +64,37 @@ function loadCoursesDropdown() {
 }
 
 /**
- * Triggered when a course is chosen from the dropdown
+ * Triggered on course dropdown change
  */
 function onCourseSelected() {
     hideError();
     const courseSelect = document.getElementById('course-select');
     const courseId = courseSelect.value;
-
     if (!courseId) return;
 
-    // Find course details
+    // Display course details
     const selectedCourse = allCourses.find(c => String(c.id) === String(courseId));
-    if (selectedCourse) {
-        document.getElementById('display-course-code').textContent = selectedCourse.courseCode || 'N/A';
-        document.getElementById('display-course-name').textContent = selectedCourse.courseName || 'Untitled Course';
-        document.getElementById('display-course-dept').textContent = selectedCourse.department || 'General';
+    const metaCard = document.getElementById('course-meta-details');
+    if (selectedCourse && metaCard) {
+        document.getElementById('display-course-code').textContent = selectedCourse.courseCode || '';
+        document.getElementById('display-course-name').textContent = selectedCourse.courseName || '';
+        document.getElementById('display-course-dept').textContent = selectedCourse.department || '';
+        metaCard.style.display = 'block';
     }
 
     fetchCourseAverages(courseId);
 }
 
 /**
- * Fetch question averages for the chosen course from /api/feedback/course/{courseId}/averages
+ * Fetch question averages from /api/feedback/course/{id}/averages
  */
 function fetchCourseAverages(courseId) {
-    const displayArea = document.getElementById('results-display-area');
-    const placeholder = document.getElementById('initial-placeholder');
     const tableBody = document.getElementById('results-table-body');
-
-    // Show results container
-    displayArea.style.display = 'block';
-    placeholder.style.display = 'none';
 
     tableBody.innerHTML = `
         <tr>
-            <td colspan="4" class="table-empty-state">
+            <td colspan="5" class="table-empty-state">
+                <span class="loading-spinner" style="border-top-color: var(--primary); border-color: rgba(37, 99, 235, 0.2); margin-right: 8px;"></span>
                 Calculating feedback results...
             </td>
         </tr>
@@ -115,59 +110,59 @@ function fetchCourseAverages(courseId) {
         .then(averages => {
             tableBody.innerHTML = '';
 
-            // Handle empty feedback state
+            // Handle empty responses
             if (!averages || averages.length === 0) {
                 document.getElementById('display-overall-rating').textContent = 'N/A';
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="table-empty-state">
+                        <td colspan="5" class="table-empty-state">
                             <strong>No feedback data available for this course.</strong>
-                            <p style="margin-top: 6px;">Students have not yet submitted evaluations for this course.</p>
+                            <p style="margin-top: 4px;">Students have not yet submitted feedback evaluations for this course.</p>
                         </td>
                     </tr>
                 `;
                 return;
             }
 
-            // Calculate overall course average from question averages
-            let totalRatingSum = 0;
+            // Calculate overall course average on frontend
+            let sum = 0;
             averages.forEach(item => {
-                totalRatingSum += Number(item.averageRating || 0);
+                sum += Number(item.averageRating || 0);
             });
-            const overallAverage = totalRatingSum / averages.length;
-            const roundedOverall = (Math.round(overallAverage * 10) / 10).toFixed(1);
+            const overall = sum / averages.length;
+            const roundedOverall = (Math.round(overall * 10) / 10).toFixed(1);
 
             document.getElementById('display-overall-rating').textContent = `${roundedOverall} / 5`;
 
-            // Populate table rows
+            // Render question rows
             averages.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 const avg = Number(item.averageRating || 0);
                 const avgFormatted = (Math.round(avg * 10) / 10).toFixed(1);
                 const percent = Math.min(100, Math.max(0, (avg / 5) * 100));
 
-                // Determine bar color intensity
-                let fillClass = 'medium';
-                if (avg >= 4.0) fillClass = 'high';
-                else if (avg < 2.5) fillClass = 'low';
+                const statusInfo = getStatusInfo(avg);
 
                 tr.innerHTML = `
+                    <td><span class="badge-code">Q${index + 1}</span></td>
                     <td>
-                        <span class="badge-code">Q${index + 1}</span>
+                        <strong style="color: var(--text-primary); font-size: 13.5px;">${escapeHtml(item.questionText || '')}</strong>
                     </td>
                     <td>
-                        <strong>${escapeHtml(item.questionText || 'Evaluation Question')}</strong>
-                    </td>
-                    <td>
-                        <div class="rating-progress-wrapper">
-                            <div class="progress-track">
-                                <div class="progress-fill ${fillClass}" style="width: ${percent}%;"></div>
+                        <div class="results-meter-wrap">
+                            <div class="results-meter-track">
+                                <div class="results-meter-fill ${statusInfo.className}" style="width: ${percent}%;"></div>
                             </div>
-                            <span class="rating-score-pill">${avgFormatted}</span>
+                            <span style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); min-width: 32px;">${avgFormatted}</span>
                         </div>
                     </td>
-                    <td style="text-align: right; font-weight: 600;">
+                    <td style="font-weight: 700; color: var(--text-primary);">
                         ${avgFormatted} / 5
+                    </td>
+                    <td style="text-align: right;">
+                        <span class="status-badge ${statusInfo.className}">
+                            ${statusInfo.label}
+                        </span>
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -178,12 +173,34 @@ function fetchCourseAverages(courseId) {
             showError('Unable to load feedback results for this course.');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="table-empty-state" style="color: #ef4444;">
+                    <td colspan="5" class="table-empty-state" style="color: var(--danger);">
                         Failed to load question ratings.
                     </td>
                 </tr>
             `;
         });
+}
+
+/**
+ * Status mapping based on real average score:
+ * 4.5–5.0 = Excellent
+ * 3.5–4.49 = Very Good
+ * 2.5–3.49 = Good
+ * 1.5–2.49 = Fair
+ * Below 1.5 = Poor
+ */
+function getStatusInfo(rating) {
+    if (rating >= 4.5) {
+        return { label: 'Excellent', className: 'excellent' };
+    } else if (rating >= 3.5) {
+        return { label: 'Very Good', className: 'verygood' };
+    } else if (rating >= 2.5) {
+        return { label: 'Good', className: 'good' };
+    } else if (rating >= 1.5) {
+        return { label: 'Fair', className: 'fair' };
+    } else {
+        return { label: 'Poor', className: 'poor' };
+    }
 }
 
 /**

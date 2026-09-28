@@ -13,16 +13,18 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <div class="logo-icon">FF</div>
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
                     <div class="brand-text">
                         <h1>FeedbackFlow</h1>
-                        <p>Academic System</p>
+                        <p>Course Feedback Collection System</p>
                     </div>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Navigation</div>
+                <div class="nav-section-title">Menu</div>
                 <ul class="nav-menu">
                     <li>
                         <a href="index.html" class="nav-link" id="nav-dashboard">
@@ -74,90 +76,87 @@
                     <p>Course-wise Question Rating Analysis</p>
                 </div>
                 <div class="header-right">
-                    <div class="system-badge">
-                        <span class="pulse-dot"></span>
-                        Academic Feedback System
+                    <div class="user-profile-badge">
+                        <div class="header-user-avatar">A</div>
+                        <div class="user-details">
+                            <span class="header-user-name">Admin</span>
+                            <span class="user-role-label">Administrator</span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Page Body -->
             <main class="dashboard-content">
-                <!-- Error Banner -->
+                <!-- Notifications -->
                 <div id="error-banner" class="alert-banner">
                     <span id="error-message"></span>
                 </div>
 
-                <!-- SECTION 1: Course Selection -->
-                <div class="content-card" style="padding: 24px; margin-bottom: 28px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="course-select" class="form-label">
-                            Select Course to View Evaluation
-                        </label>
-                        <select id="course-select" class="form-select" onchange="onCourseSelected()">
-                            <option value="" disabled selected>-- Select a Course --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Course Results Container (Displayed once a course is chosen) -->
-                <div id="results-display-area" style="display: none;">
-                    <!-- SECTION 2 & 4: Course Summary & Overall Rating Card -->
-                    <div class="results-summary-grid">
-                        <!-- Course Summary Card -->
-                        <div class="content-card" style="padding: 24px; margin-bottom: 0; display: flex; align-items: center;">
-                            <div class="course-meta-box">
-                                <span class="badge-code" id="display-course-code" style="align-self: flex-start;">CS101</span>
-                                <h3 class="course-meta-title" id="display-course-name">Course Title</h3>
-                                <div class="course-meta-details">
-                                    <span>Department: <strong id="display-course-dept">CSE</strong></span>
-                                </div>
-                            </div>
+                <!-- TOP: Course Select Dropdown & Large Overall Course Rating Card -->
+                <div class="results-top-grid">
+                    <!-- Course Selector & Details -->
+                    <div class="content-card" style="padding: 22px 24px; margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="course-select" class="form-label">
+                                Select Course
+                            </label>
+                            <select id="course-select" class="form-select" onchange="onCourseSelected()">
+                                <option value="" disabled selected>-- Select Course --</option>
+                            </select>
                         </div>
 
-                        <!-- Overall Course Rating Card -->
-                        <div class="overall-rating-card">
-                            <span class="overall-rating-label">Overall Course Rating</span>
-                            <span class="overall-rating-value" id="display-overall-rating">-- / 5</span>
-                            <span class="overall-rating-sub">Calculated from question averages</span>
+                        <div id="course-meta-details" style="display: none; padding-top: 10px; border-top: 1px solid var(--border-light);">
+                            <span class="badge-code" id="display-course-code">--</span>
+                            <span style="font-weight: 700; color: var(--text-primary); margin: 0 8px;" id="display-course-name">Course</span>
+                            <span class="badge-dept" id="display-course-dept">--</span>
                         </div>
                     </div>
 
-                    <!-- SECTION 3: Question-wise Results -->
-                    <section class="dashboard-section">
-                        <div class="section-header">
-                            <div>
-                                <h3 class="section-title">Question-wise Breakdown</h3>
-                                <p class="section-subtitle">Average student rating calculated per evaluation question</p>
-                            </div>
+                    <!-- Large Overall Course Rating Card -->
+                    <div class="overall-score-card">
+                        <div class="overall-score-badge">
+                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         </div>
-
-                        <div class="content-card">
-                            <div class="table-responsive">
-                                <table class="academic-table" id="results-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 100px;">Question No.</th>
-                                            <th>Question</th>
-                                            <th style="width: 260px;">Average Rating</th>
-                                            <th style="width: 140px; text-align: right;">Rating out of 5</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="results-table-body">
-                                        <!-- Dynamic rows inserted here -->
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="overall-score-text">
+                            <h3 id="display-overall-rating">-- / 5</h3>
+                            <p>Overall Course Rating</p>
                         </div>
-                    </section>
+                    </div>
                 </div>
 
-                <!-- Initial Empty State -->
-                <div id="initial-placeholder" class="content-card" style="padding: 48px; text-align: center; color: var(--text-secondary);">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; color: var(--text-muted);"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                    <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Select a Course</h3>
-                    <p style="font-size: 14px;">Choose a course from the dropdown above to view its student feedback ratings.</p>
-                </div>
+                <!-- BOTTOM: Question-wise Results Table -->
+                <section class="dashboard-section" id="results-section" style="margin-top: 24px;">
+                    <div class="section-header">
+                        <div>
+                            <h3 class="section-title">Question-wise Results</h3>
+                            <p class="section-subtitle">Average score and evaluation status breakdown</p>
+                        </div>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="table-responsive">
+                            <table class="academic-table" id="results-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">No.</th>
+                                        <th>Question</th>
+                                        <th style="width: 240px;">Average Rating</th>
+                                        <th style="width: 140px;">Rating out of 5</th>
+                                        <th style="width: 130px; text-align: right;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-table-body">
+                                    <tr>
+                                        <td colspan="5" class="table-empty-state">
+                                            Select a course from above to view question-wise evaluation results.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
     </div>

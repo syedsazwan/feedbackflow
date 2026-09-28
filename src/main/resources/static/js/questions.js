@@ -1,16 +1,16 @@
 // FeedbackFlow - Question Management JavaScript
-// Handles adding, updating, listing, and deleting feedback evaluation questions
+// Handles adding, updating, listing, filtering, and deleting questions
 
-let questionsList = [];
+let allQuestions = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadQuestionsTable();
+    loadQuestions();
 });
 
 /**
- * Fetch all evaluation questions from /api/questions and populate table
+ * Fetch all evaluation questions from /api/questions
  */
-function loadQuestionsTable() {
+function loadQuestions() {
     const tableBody = document.getElementById('questions-table-body');
 
     fetch('/api/questions')
@@ -21,55 +21,82 @@ function loadQuestionsTable() {
             return response.json();
         })
         .then(questions => {
-            questionsList = questions || [];
-            tableBody.innerHTML = '';
-
-            if (questionsList.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="table-empty-state">
-                            <strong>No evaluation questions found</strong>
-                            <p style="margin-top: 6px;">Use the form above to add a new question.</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            questionsList.forEach(q => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>#${q.id}</strong></td>
-                    <td>
-                        <strong>${escapeHtml(q.questionText || '')}</strong>
-                    </td>
-                    <td style="text-align: right;">
-                        <div class="btn-group">
-                            <button class="btn-edit" onclick="startEditQuestion(${q.id})">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteQuestion(${q.id})">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                Delete
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
+            allQuestions = questions || [];
+            renderQuestionsTable(allQuestions);
         })
         .catch(error => {
             console.error('Error fetching questions:', error);
             showError('Unable to load questions from the backend.');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="3" class="table-empty-state" style="color: #ef4444;">
+                    <td colspan="3" class="table-empty-state" style="color: var(--danger);">
                         Failed to load questions. Please check server connection.
                     </td>
                 </tr>
             `;
         });
+}
+
+/**
+ * Filter questions based on search input
+ */
+function filterQuestionsTable() {
+    const searchVal = (document.getElementById('question-search-input')?.value || '').toLowerCase().trim();
+
+    const filtered = allQuestions.filter(q => {
+        return !searchVal || (q.questionText && q.questionText.toLowerCase().includes(searchVal));
+    });
+
+    renderQuestionsTable(filtered);
+}
+
+/**
+ * Render questions into the table
+ */
+function renderQuestionsTable(questions) {
+    const tableBody = document.getElementById('questions-table-body');
+    const badge = document.getElementById('question-total-badge');
+
+    if (badge) {
+        badge.textContent = `Total: ${questions.length} Questions`;
+    }
+
+    tableBody.innerHTML = '';
+
+    if (!questions || questions.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="3" class="table-empty-state">
+                    <strong>No evaluation questions found</strong>
+                    <p style="margin-top: 4px;">Use the form above to add a new question.</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    questions.forEach(q => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span style="font-weight: 600; color: var(--text-secondary);">#${q.id}</span></td>
+            <td>
+                <strong style="color: var(--text-primary); font-size: 13.5px;">${escapeHtml(q.questionText || '')}</strong>
+            </td>
+            <td style="text-align: right;">
+                <div class="btn-group">
+                    <button class="btn-outline-blue" onclick="startEditQuestion(${q.id})">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        Edit
+                    </button>
+                    <button class="btn-outline-red" onclick="deleteQuestion(${q.id})">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Delete
+                    </button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
 }
 
 /**
@@ -82,7 +109,6 @@ function handleQuestionSubmit(event) {
     const questionId = document.getElementById('question-id').value;
     const questionText = document.getElementById('question-text').value.trim();
 
-    // Validation
     if (!questionText) {
         showError('Please enter question text.');
         return;
@@ -95,7 +121,6 @@ function handleQuestionSubmit(event) {
     const submitBtn = document.getElementById('btn-question-submit');
     submitBtn.disabled = true;
 
-    // Determine if creating (POST) or updating (PUT)
     const isEditMode = Boolean(questionId);
     const url = isEditMode ? `/api/questions/${encodeURIComponent(questionId)}` : '/api/questions';
     const method = isEditMode ? 'PUT' : 'POST';
@@ -115,9 +140,9 @@ function handleQuestionSubmit(event) {
         })
         .then(savedQuestion => {
             const actionMsg = isEditMode ? 'updated' : 'added';
-            showSuccess(`Question ${actionMsg} successfully!`);
+            showSuccess(`Question ${actionMsg} successfully.`);
             cancelEdit();
-            loadQuestionsTable();
+            loadQuestions();
         })
         .catch(error => {
             console.error('Error saving question:', error);
@@ -133,7 +158,7 @@ function handleQuestionSubmit(event) {
  */
 function startEditQuestion(id) {
     hideMessages();
-    const question = questionsList.find(q => Number(q.id) === Number(id));
+    const question = allQuestions.find(q => Number(q.id) === Number(id));
     if (!question) return;
 
     document.getElementById('question-id').value = question.id;
@@ -143,8 +168,7 @@ function startEditQuestion(id) {
     document.getElementById('btn-submit-text').textContent = 'Update Question';
     document.getElementById('btn-cancel-edit').style.display = 'inline-flex';
 
-    // Scroll to form
-    document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToForm();
 }
 
 /**
@@ -156,6 +180,14 @@ function cancelEdit() {
     document.getElementById('form-title').textContent = 'Add Feedback Question';
     document.getElementById('btn-submit-text').textContent = 'Add Question';
     document.getElementById('btn-cancel-edit').style.display = 'none';
+}
+
+/**
+ * Helper to smoothly scroll to form
+ */
+function scrollToForm() {
+    document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('question-text').focus();
 }
 
 /**
@@ -177,11 +209,11 @@ function deleteQuestion(id) {
             return response.text();
         })
         .then(msg => {
-            showSuccess(msg || 'Question deleted successfully!');
+            showSuccess(msg || 'Question deleted successfully.');
             if (document.getElementById('question-id').value === String(id)) {
                 cancelEdit();
             }
-            loadQuestionsTable();
+            loadQuestions();
         })
         .catch(error => {
             console.error('Error deleting question:', error);

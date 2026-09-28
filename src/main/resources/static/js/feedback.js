@@ -1,6 +1,7 @@
 // FeedbackFlow - Submit Feedback JavaScript
-// Handles loading courses, questions, and submitting student evaluations
+// Handles course selection details, dynamic question rendering, real-time progress, and submission
 
+let coursesData = [];
 let questionsData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +18,7 @@ function initFeedbackForm() {
 }
 
 /**
- * Load courses from /api/courses to populate the dropdown
+ * Load courses from /api/courses
  */
 function loadCourses() {
     const courseSelect = document.getElementById('course-select');
@@ -32,15 +33,16 @@ function loadCourses() {
             return response.json();
         })
         .then(courses => {
+            coursesData = courses || [];
             courseSelect.innerHTML = '<option value="" disabled selected>-- Select a Course --</option>';
 
-            if (!courses || courses.length === 0) {
+            if (coursesData.length === 0) {
                 courseSelect.innerHTML = '<option value="" disabled>No courses registered yet</option>';
                 showError('No courses found. Please register courses before submitting feedback.');
                 return;
             }
 
-            courses.forEach(course => {
+            coursesData.forEach(course => {
                 const option = document.createElement('option');
                 option.value = course.id;
                 option.textContent = `${course.courseCode} - ${course.courseName} (${course.department})`;
@@ -51,6 +53,11 @@ function loadCourses() {
 
                 courseSelect.appendChild(option);
             });
+
+            // Update course details card if preselected
+            if (preselectedCourseId) {
+                onCourseSelected();
+            }
         })
         .catch(error => {
             console.error('Error fetching courses:', error);
@@ -60,7 +67,26 @@ function loadCourses() {
 }
 
 /**
- * Load questions from /api/questions and render the 1-5 rating UI
+ * Update course preview card when selected
+ */
+function onCourseSelected() {
+    const courseSelect = document.getElementById('course-select');
+    const courseId = courseSelect.value;
+    const card = document.getElementById('course-info-card');
+
+    const course = coursesData.find(c => String(c.id) === String(courseId));
+    if (course && card) {
+        document.getElementById('info-course-code').textContent = course.courseCode || '';
+        document.getElementById('info-course-name').textContent = course.courseName || '';
+        document.getElementById('info-course-dept').textContent = course.department || '';
+        card.style.display = 'block';
+    } else if (card) {
+        card.style.display = 'none';
+    }
+}
+
+/**
+ * Load questions from /api/questions and render the 1-5 rating cards
  */
 function loadQuestions() {
     const container = document.getElementById('questions-container');
@@ -75,6 +101,8 @@ function loadQuestions() {
         .then(questions => {
             questionsData = questions || [];
             container.innerHTML = '';
+
+            updateProgressBar();
 
             if (questionsData.length === 0) {
                 container.innerHTML = `
@@ -102,7 +130,7 @@ function loadQuestions() {
                     const inputId = `rating_${q.id}_${label.val}`;
                     ratingOptionsHtml += `
                         <label class="rating-option" for="${inputId}">
-                            <input type="radio" id="${inputId}" name="question_${q.id}" value="${label.val}" required>
+                            <input type="radio" id="${inputId}" name="question_${q.id}" value="${label.val}" onchange="updateProgressBar()" required>
                             <div class="rating-box">
                                 <span class="rating-number">${label.val}</span>
                                 <span class="rating-text">${label.text}</span>
@@ -123,16 +151,41 @@ function loadQuestions() {
 
                 container.appendChild(questionCard);
             });
+
+            updateProgressBar();
         })
         .catch(error => {
             console.error('Error fetching questions:', error);
             container.innerHTML = `
-                <div class="content-card" style="padding: 32px; text-align: center; color: #ef4444;">
+                <div class="content-card" style="padding: 32px; text-align: center; color: var(--danger);">
                     Failed to load evaluation questions. Please try again.
                 </div>
             `;
             showError('Unable to load evaluation questions from the server.');
         });
+}
+
+/**
+ * Calculate and update real-time questions answered progress bar
+ */
+function updateProgressBar() {
+    const total = questionsData.length;
+    let answered = 0;
+
+    questionsData.forEach(q => {
+        const checked = document.querySelector(`input[name="question_${q.id}"]:checked`);
+        if (checked) answered++;
+    });
+
+    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+    const textEl = document.getElementById('progress-text');
+    const pctEl = document.getElementById('progress-pct');
+    const fillEl = document.getElementById('progress-bar-fill');
+
+    if (textEl) textEl.textContent = `${answered} / ${total}`;
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (fillEl) fillEl.style.width = `${pct}%`;
 }
 
 /**
@@ -156,17 +209,18 @@ function handleFeedbackSubmit(event) {
         return;
     }
 
-    // Collect ratings for all questions
+    // Collect ratings
     const ratings = [];
-    for (const q of questionsData) {
-        const selectedRatingInput = document.querySelector(`input[name="question_${q.id}"]:checked`);
-        if (!selectedRatingInput) {
-            showError(`Please answer all questions before submitting (missing Question #${questionsData.indexOf(q) + 1}).`);
+    for (let i = 0; i < questionsData.length; i++) {
+        const q = questionsData[i];
+        const selected = document.querySelector(`input[name="question_${q.id}"]:checked`);
+        if (!selected) {
+            showError(`Please answer all questions before submitting (missing Question #${i + 1}).`);
             return;
         }
         ratings.push({
             questionId: Number(q.id),
-            rating: Number(selectedRatingInput.value)
+            rating: Number(selected.value)
         });
     }
 
@@ -177,7 +231,6 @@ function handleFeedbackSubmit(event) {
 
     const submitBtn = document.getElementById('btn-submit');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Submitting...';
 
     fetch('/api/feedback', {
         method: 'POST',
@@ -193,30 +246,31 @@ function handleFeedbackSubmit(event) {
             return response.json();
         })
         .then(savedFeedback => {
-            showSuccess(`Feedback successfully submitted for course! Evaluation recorded.`);
+            showSuccess('Feedback submitted successfully. Thank you for evaluating this course.');
             resetForm();
         })
         .catch(error => {
             console.error('Submission error:', error);
-            showError('Failed to submit feedback. Please verify your connection and try again.');
+            showError('Failed to submit feedback. Please check your connection and try again.');
         })
         .finally(() => {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Submit Feedback</span>
-            `;
         });
 }
 
 /**
- * Reset form fields
+ * Reset form fields and progress bar
  */
 function resetForm() {
     const form = document.getElementById('feedback-form');
     if (form) {
         form.reset();
     }
+    const card = document.getElementById('course-info-card');
+    if (card) {
+        card.style.display = 'none';
+    }
+    updateProgressBar();
 }
 
 /**

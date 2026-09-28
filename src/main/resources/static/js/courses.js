@@ -1,16 +1,16 @@
 // FeedbackFlow - Course Management JavaScript
-// Handles adding, updating, listing, and deleting courses
+// Handles adding, updating, listing, filtering, and deleting courses
 
-let coursesList = [];
+let allCourses = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadCoursesTable();
+    loadCourses();
 });
 
 /**
- * Fetch all registered courses from /api/courses and populate table
+ * Fetch all registered courses from /api/courses
  */
-function loadCoursesTable() {
+function loadCourses() {
     const tableBody = document.getElementById('courses-table-body');
 
     fetch('/api/courses')
@@ -21,61 +21,117 @@ function loadCoursesTable() {
             return response.json();
         })
         .then(courses => {
-            coursesList = courses || [];
-            tableBody.innerHTML = '';
-
-            if (coursesList.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="table-empty-state">
-                            <strong>No courses registered yet</strong>
-                            <p style="margin-top: 6px;">Use the form above to add your first course.</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            coursesList.forEach(course => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>#${course.id}</strong></td>
-                    <td>
-                        <span class="badge-code">${escapeHtml(course.courseCode || '')}</span>
-                    </td>
-                    <td>
-                        <strong>${escapeHtml(course.courseName || '')}</strong>
-                    </td>
-                    <td>
-                        <span class="badge-dept">${escapeHtml(course.department || '')}</span>
-                    </td>
-                    <td style="text-align: right;">
-                        <div class="btn-group">
-                            <button class="btn-edit" onclick="startEditCourse(${course.id})">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteCourse(${course.id}, '${escapeHtml(course.courseCode)}')">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                Delete
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
+            allCourses = courses || [];
+            updateDeptFilterOptions();
+            renderCoursesTable(allCourses);
         })
         .catch(error => {
             console.error('Error fetching courses:', error);
             showError('Unable to load courses from the backend.');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="table-empty-state" style="color: #ef4444;">
+                    <td colspan="5" class="table-empty-state" style="color: var(--danger);">
                         Failed to load courses. Please check server connection.
                     </td>
                 </tr>
             `;
         });
+}
+
+/**
+ * Populate department dropdown filter with unique departments
+ */
+function updateDeptFilterOptions() {
+    const select = document.getElementById('dept-filter-select');
+    if (!select) return;
+
+    const currentVal = select.value;
+    const depts = Array.from(new Set(allCourses.map(c => (c.department || '').trim()).filter(Boolean))).sort();
+
+    select.innerHTML = '<option value="">All Departments</option>';
+    depts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        if (d === currentVal) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
+/**
+ * Filter courses using search input and department filter
+ */
+function filterCoursesTable() {
+    const searchVal = (document.getElementById('course-search-input')?.value || '').toLowerCase().trim();
+    const deptVal = document.getElementById('dept-filter-select')?.value || '';
+
+    const filtered = allCourses.filter(course => {
+        const matchesSearch = !searchVal ||
+            (course.courseCode && course.courseCode.toLowerCase().includes(searchVal)) ||
+            (course.courseName && course.courseName.toLowerCase().includes(searchVal)) ||
+            (course.department && course.department.toLowerCase().includes(searchVal));
+
+        const matchesDept = !deptVal || (course.department && course.department.trim() === deptVal.trim());
+
+        return matchesSearch && matchesDept;
+    });
+
+    renderCoursesTable(filtered);
+}
+
+/**
+ * Render filtered or full courses array into the table
+ */
+function renderCoursesTable(courses) {
+    const tableBody = document.getElementById('courses-table-body');
+    const badge = document.getElementById('course-total-badge');
+
+    if (badge) {
+        badge.textContent = `Total: ${courses.length} Courses`;
+    }
+
+    tableBody.innerHTML = '';
+
+    if (!courses || courses.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="table-empty-state">
+                    <strong>No courses found</strong>
+                    <p style="margin-top: 4px;">Use the form above to add a course.</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    courses.forEach((course, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span style="font-weight: 600; color: var(--text-secondary);">#${course.id}</span></td>
+            <td>
+                <span class="badge-code">${escapeHtml(course.courseCode || '')}</span>
+            </td>
+            <td>
+                <strong style="color: var(--text-primary);">${escapeHtml(course.courseName || '')}</strong>
+            </td>
+            <td>
+                <span class="badge-dept">${escapeHtml(course.department || '')}</span>
+            </td>
+            <td style="text-align: right;">
+                <div class="btn-group">
+                    <button class="btn-outline-blue" onclick="startEditCourse(${course.id})">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        Edit
+                    </button>
+                    <button class="btn-outline-red" onclick="deleteCourse(${course.id}, '${escapeHtml(course.courseCode)}')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Delete
+                    </button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
 }
 
 /**
@@ -90,7 +146,6 @@ function handleCourseSubmit(event) {
     const courseName = document.getElementById('course-name').value.trim();
     const department = document.getElementById('department').value.trim();
 
-    // Validation
     if (!courseCode || !courseName || !department) {
         showError('Please fill in all required fields (Course Code, Name, and Department).');
         return;
@@ -105,7 +160,6 @@ function handleCourseSubmit(event) {
     const submitBtn = document.getElementById('btn-course-submit');
     submitBtn.disabled = true;
 
-    // Check if creating (POST) or updating (PUT)
     const isEditMode = Boolean(courseId);
     const url = isEditMode ? `/api/courses/${encodeURIComponent(courseId)}` : '/api/courses';
     const method = isEditMode ? 'PUT' : 'POST';
@@ -125,13 +179,13 @@ function handleCourseSubmit(event) {
         })
         .then(savedCourse => {
             const actionMsg = isEditMode ? 'updated' : 'added';
-            showSuccess(`Course "${savedCourse.courseCode} - ${savedCourse.courseName}" ${actionMsg} successfully!`);
+            showSuccess(`Course "${savedCourse.courseCode} - ${savedCourse.courseName}" ${actionMsg} successfully.`);
             cancelEdit();
-            loadCoursesTable();
+            loadCourses();
         })
         .catch(error => {
             console.error('Error saving course:', error);
-            showError('Failed to save course. Please try again.');
+            showError('Failed to save course. Please verify input.');
         })
         .finally(() => {
             submitBtn.disabled = false;
@@ -143,7 +197,7 @@ function handleCourseSubmit(event) {
  */
 function startEditCourse(id) {
     hideMessages();
-    const course = coursesList.find(c => Number(c.id) === Number(id));
+    const course = allCourses.find(c => Number(c.id) === Number(id));
     if (!course) return;
 
     document.getElementById('course-id').value = course.id;
@@ -155,8 +209,7 @@ function startEditCourse(id) {
     document.getElementById('btn-submit-text').textContent = 'Update Course';
     document.getElementById('btn-cancel-edit').style.display = 'inline-flex';
 
-    // Scroll to form
-    document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToForm();
 }
 
 /**
@@ -171,12 +224,20 @@ function cancelEdit() {
 }
 
 /**
+ * Helper to smoothly scroll to form
+ */
+function scrollToForm() {
+    document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('course-code').focus();
+}
+
+/**
  * Delete a course by id with confirmation
  */
 function deleteCourse(id, courseCode) {
     hideMessages();
 
-    const confirmed = confirm(`Are you sure you want to delete course "${courseCode}"? This will remove related records.`);
+    const confirmed = confirm(`Are you sure you want to delete course "${courseCode}"?`);
     if (!confirmed) return;
 
     fetch(`/api/courses/${encodeURIComponent(id)}`, {
@@ -189,12 +250,11 @@ function deleteCourse(id, courseCode) {
             return response.text();
         })
         .then(msg => {
-            showSuccess(msg || 'Course deleted successfully!');
-            // If the deleted course was currently in edit mode, cancel edit
+            showSuccess(msg || 'Course deleted successfully.');
             if (document.getElementById('course-id').value === String(id)) {
                 cancelEdit();
             }
-            loadCoursesTable();
+            loadCourses();
         })
         .catch(error => {
             console.error('Error deleting course:', error);
