@@ -751,11 +751,11 @@ body {
 
 .academic-table th {
     background-color: #f8fafc;
-    color: #475569;
+    color: #24324a;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.75px;
     padding: 13px 20px;
     border-bottom: 1px solid var(--border-color);
 }
